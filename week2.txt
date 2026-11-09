@@ -1,0 +1,49 @@
+
+CONTAINER ID   IMAGE             COMMAND                  CREATED          >
+6a93fec2ce2e   getting-started   "docker-entrypoint.s…"   14 minutes ago   >
+PID   USER     TIME  COMMAND
+    1 root      0:17 node src/index.js
+   36 root      0:00 ps aux
+lease
+NAME="Alpine Linux"
+ID=alpine
+VERSION_ID=3.24.3
+PRETTY_NAME="Alpine Linux v3.24"
+HOME_URL="https://alpinelinux.org/"
+BUG_REPORT_URL="https://gitlab.alpinelinux.org/alpine/aports/-/issues"
+804
+804 root      0:17 node src/index.js
+172.17.0.2
+IMAGE          CREATED          CREATED BY                                 >
+6e042fa45c75   32 minutes ago   CMD ["node" "src/index.js"]                >
+<missing>      32 minutes ago   EXPOSE [3000/tcp]                          >
+<missing>      32 minutes ago   RUN /bin/sh -c yarn install --production # >
+<missing>      32 minutes ago   COPY . . # buildkit                        >
+<missing>      9 days ago       WORKDIR /app                               >
+<missing>      13 days ago      CMD ["node"]                               >
+<missing>      13 days ago      ENTRYPOINT ["docker-entrypoint.sh"]        >
+<missing>      13 days ago      COPY docker-entrypoint.sh /usr/local/bin/ #>
+<missing>      13 days ago      RUN /bin/sh -c apk add --no-cache --virtual>
+<missing>      13 days ago      ENV YARN_VERSION=1.22.22                   >
+<missing>      13 days ago      RUN /bin/sh -c addgroup -g 1000 node     &&>
+<missing>      13 days ago      ENV NODE_VERSION=22.23.4                   >
+<missing>      13 days ago      CMD ["/bin/sh"]                            >
+<missing>      13 days ago      ADD alpine-minirootfs-3.24.3-x86_64.tar.gz >
+
+1. Which PID does node have inside the container? Which PID does the host see? Why two numbers?
+
+Inside the container, the Node.js process usually has PID 1. On the host, the same process has a different PID, such as 2456. This happens because Docker uses PID namespaces. A process can have different PIDs in different PID namespaces.
+
+2. Which Linux distribution is inside? Is it the same as your laptop's?
+
+The container uses Alpine Linux, as specified by the base image node:22-alpine. It may be different from my laptop's Linux distribution. Containers share the host's kernel but can use a different user-space distribution.
+
+3. In B7, which layer is the biggest? Why?
+
+The biggest layer is usually the one created by RUN yarn install --production, because it installs the Node.js dependencies and their required packages. The exact largest layer depends on the output of docker history getting-started.
+
+4. After the one-word change, did yarn install run again? Why is that a waste of time, and which line order would avoid it?
+
+Yes, yarn install ran again because COPY . . appears before RUN yarn install --production. Changing a source file invalidates the COPY layer and the following layers.
+
+This wastes time because the dependencies have not changed. To avoid this, copy package.json and yarn.lock first, install dependencies, and then copy the application source code. This allows Docker to reuse the dependency installation layer when only source files change.
